@@ -7,11 +7,26 @@ class nginx-php-mongo {
     ip           => $ipaddress,
   }
 
-  $php = ["php5-fpm", "php5-cli", "php5-dev", "php5-gd", "php5-curl", "php-pear", "php-apc", "php5-mcrypt", "php5-xdebug", "php5-sqlite"]
+  $php = ["php5-fpm", "php5-cli", "php5-dev", "php5-gd", "php5-curl", "php-pear", "php-apc", "php5-mcrypt", "php5-xdebug", "php5-sqlite", "php5-intl", "php5-imagick"]
+
+  exec { 'sudo apt-key mongodb':
+    command => '/usr/bin/sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10',
+    before => Exec['apt-get update'],
+  }
+
+  file { '/etc/apt/sources.list.d/10gen.list':
+    owner  => root,
+    group  => root,
+    ensure => file,
+    mode   => 644,
+    source => '/vagrant/files/10gen.list',
+    before => Exec['apt-get update'],
+    require => Exec['sudo apt-key mongodb'],
+  }
 
   exec { 'apt-get update':
     command => '/usr/bin/apt-get update',
-    before => [Package["python-software-properties"], Package["build-essential"], Package["nginx"], Package["mongodb"], Package[$php]],
+    before => [Package["python-software-properties"], Package["build-essential"], Package["nginx"], Package["git"], Package["mongodb-10gen"], Package[$php]],
   }
 
   package { "python-software-properties":
@@ -23,7 +38,7 @@ class nginx-php-mongo {
     require => Package["python-software-properties"],
   }
 
-  exec { 'apt-get update for latest php':
+  exec { 'apt-get update for latest php, mongodb-10gen':
     command => '/usr/bin/apt-get update',
     before => Package[$php],
     require => Exec['add-apt-repository ppa:ondrej/php5'],
@@ -37,13 +52,32 @@ class nginx-php-mongo {
     ensure => present,
   }
 
-  package { "mongodb":
+  package { "openjdk-7-jre":
     ensure => present,
+  }
+
+  package { "git":
+    ensure => present,
+  }
+
+  package { "mongodb-10gen":
+    ensure => present,
+    require => Exec['apt-get update'],
   }
 
   package { $php:
     notify => Service['php5-fpm'],
-    ensure => latest,
+    ensure => present,
+  }
+
+  package { "imagemagick":
+    ensure => present,
+    require => Package[$php],
+  }
+
+  package { "libmagickwand-dev":
+    ensure => present,
+    require => Package["imagemagick"],
   }
 
   package { "apache2.2-bin":
@@ -58,7 +92,6 @@ class nginx-php-mongo {
     logoutput => "on_failure",
     require => [Package["build-essential"], Package[$php]],
     before => [File['/etc/php5/cli/php.ini'], File['/etc/php5/fpm/php.ini'], File['/etc/php5/fpm/php-fpm.conf'], File['/etc/php5/fpm/pool.d/www.conf']],
-    unless => "/usr/bin/php -m | grep mongo",
   }
 
   exec { 'pear config-set auto_discover 1':
@@ -115,6 +148,7 @@ class nginx-php-mongo {
   }
 
   file { '/etc/nginx/sites-available/default':
+    notify => Service["nginx"],
     owner  => root,
     group  => root,
     ensure => file,
@@ -124,7 +158,6 @@ class nginx-php-mongo {
   }
 
   file { "/etc/nginx/sites-enabled/default":
-    notify => Service["nginx"],
     ensure => link,
     target => "/etc/nginx/sites-available/default",
     require => Package["nginx"],
@@ -142,7 +175,7 @@ class nginx-php-mongo {
 
   service { "mongodb":
     ensure => running,
-    require => Package["mongodb"],
+    require => Package["mongodb-10gen"],
   }
 }
 
