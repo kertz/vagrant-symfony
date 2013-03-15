@@ -26,7 +26,7 @@ class nginx-php-mongo {
 
   exec { 'apt-get update':
     command => '/usr/bin/apt-get update',
-    before => [Package["python-software-properties"], Package["build-essential"], Package["nginx"], Package["git"], Package["mongodb-10gen"], Package[$php]],
+    before => [Package["python-software-properties"], Package["build-essential"], Package["nginx"], Package["git"], Package["mongodb-10gen"], Package[$php], Package["openjdk-7-jre"]],
   }
 
   package { "python-software-properties":
