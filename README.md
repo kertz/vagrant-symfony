@@ -1,6 +1,19 @@
 vagrant-symfony
 ===============
 
-My Symfony2 dev environment with vagrant and puppet. Uses nginx, mongodb, php 5.4 with phpunit.
+My base Symfony 2.4.x Vagrant setup with Ubuntu 14.04 LTS. Used Puppet for provisioning.
 
-Add the precise64 box from http://files.vagrantup.com/precise64.box
+Uses Vagrant cloud to get the box `spantree/ubuntu-trusty-64` (https://vagrantcloud.com/spantree/ubuntu-trusty-64).
+
+How to use?
+===========
+
+Close the repo into your Symfony2 project base folder.
+
+Run `vagrant up`
+
+That's it. Now you should be able to access the project with http://localhost:8080
+
+```
+Note: Use the `manifests/site.pp` to install more packages that you require.
+```
